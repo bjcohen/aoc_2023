@@ -1,0 +1,5 @@
+(executable
+ (name day1)
+ (libraries aoc)
+ (preprocess
+  (pps ppx_deriving.show)))
