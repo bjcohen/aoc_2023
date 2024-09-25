@@ -1,5 +1,5 @@
-(executable
- (name day1)
- (libraries aoc)
+(executables
+ (names day1 day2)
+ (libraries aoc str)
  (preprocess
   (pps ppx_deriving.show)))
