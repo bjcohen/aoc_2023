@@ -102,41 +102,54 @@ let find_part_nums : string -> int list =
   l
 ;;
 
+module IntPair = struct
+  open Core
+
+  module T = struct
+    type t = int * int [@@deriving compare, sexp_of]
+  end
+
+  include T
+  include Comparator.Make (T)
+end
+
 let find_gear_ratios : string -> int list =
   fun input ->
   let input = String.trim input in
   let lines = String.split_on_char '\n' input in
   let width = String.length (List.nth lines 0) + 1 in
-  let acc, l =
+  let acc, gears =
     String.to_seqi (input ^ "\n")
     |> Seq.fold_left
-         (fun (acc, l) (i, c) ->
+         (fun (acc, m) (i, c) ->
            match acc, c with
-           | Some (acc, is_part_num), '0' .. '9' ->
+           | Some (acc', gear_coords), '0' .. '9' ->
              ( Some
-                 ( (acc * 10) + Char.code c - Char.code '0'
-                 , is_part_num
-                   || List.length
-                        (find_adjacent_symbol
-                           is_gear
-                           (modulo i width)
-                           (i / width)
-                           lines)
-                      > 0 )
-             , l )
-           | Some (acc, is_part_num), _ -> None, if is_part_num then l @ [ acc ] else l
+                 ( (acc' * 10) + Char.code c - Char.code '0'
+                 , find_adjacent_symbol is_gear (modulo i width) (i / width) lines
+                   |> List.fold_left Base.Set.add gear_coords )
+             , m )
+           | Some (acc', gear_coords), _ ->
+             ( None
+             , Base.Set.fold gear_coords ~init:m ~f:(fun m' gear_coord ->
+                 Base.Map.update m' gear_coord ~f:(fun v ->
+                   match v with
+                   | Some v' -> v' @ [ acc' ]
+                   | None -> [ acc' ])) )
            | None, '0' .. '9' ->
              ( Some
                  ( Char.code c - Char.code '0'
-                 , List.length
-                     (find_adjacent_symbol is_gear (modulo i width) (i / width) lines)
-                   > 0 )
-             , l )
-           | None, _ -> None, l)
-         (None, [])
+                 , find_adjacent_symbol is_gear (modulo i width) (i / width) lines
+                   |> List.fold_left Base.Set.add (Base.Set.empty (module IntPair)) )
+             , m )
+           | None, _ -> None, m)
+         (None, Base.Map.empty (module IntPair))
   in
-  let () = assert (acc = None) in
-  l
+  assert (acc = None);
+  Base.Map.fold gears ~init:[] ~f:(fun ~key:_ ~data:nums acc ->
+    match nums with
+    | [ num1; num2 ] -> acc @ [ num1 * num2 ]
+    | _ -> acc)
 ;;
 
 let () =
