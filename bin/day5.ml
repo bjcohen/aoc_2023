@@ -82,11 +82,9 @@ let map_location : map list -> int -> int =
 let map_range : map -> int * int -> (int * int) list =
   fun map (start, len) ->
   let map_sorted = List.sort (fun (_, s, _) (_, s', _) -> s - s') map in
-  let first = List.hd map_sorted |> Core.Tuple3.get2 in
   let _, last_s, last_l = Core.List.last_exn map_sorted in
   List.concat
-    [ (if start < first then [ start, min (start + len) first - start ] else [])
-    ; List.fold_left
+    [ List.fold_left
         (fun (acc, last) (d, s, l) ->
           let before = if last < s then [ max start last, s - max start last ] else [] in
           if start < s && start + len - 1 < s
