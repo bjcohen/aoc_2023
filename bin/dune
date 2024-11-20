@@ -22,7 +22,8 @@
   day20
   day21
   day22
-  day23)
+  day23
+  day24)
  (libraries aoc str core core_kernel.pairing_heap)
  (preprocess
   (pps ppx_deriving.show ppx_jane)))
